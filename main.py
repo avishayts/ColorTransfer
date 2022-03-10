@@ -5,56 +5,6 @@ refPt = []
 cropping = False
 
 
-def main():
-    source = "ocean_sunset.jpg"
-    target = "ocean_day.jpg"
-    source = cv2.imread(source)
-    target = cv2.imread(target)
-    show_image("Source", source)
-    show_image("Target", target)
-    # convert the images from the RGB to L*ab* color space, being
-    # sure to utilizing the floating point data type (note: OpenCV
-    # expects floats to be 32-bit, so use that instead of 64-bit)
-    source = cv2.cvtColor(source, cv2.COLOR_BGR2LAB).astype("float32")
-    target = cv2.cvtColor(target, cv2.COLOR_BGR2LAB).astype("float32")
-
-    # compute color statistics for the source and target images
-    (lMeanSrc, lStdSrc, aMeanSrc, aStdSrc, bMeanSrc, bStdSrc) = image_stats(source)
-    (lMeanTar, lStdTar, aMeanTar, aStdTar, bMeanTar, bStdTar) = image_stats(target)
-
-    # subtract the means from the target image
-    (l, a, b) = cv2.split(target)
-    l -= lMeanTar
-    a -= aMeanTar
-    b -= bMeanTar
-
-    l = (lStdTar / lStdSrc) * l
-    a = (aStdTar / aStdSrc) * a
-    b = (bStdTar / bStdSrc) * b
-
-    # add in the source mean
-    l += lMeanSrc
-    a += aMeanSrc
-    b += bMeanSrc
-
-    # clip/scale the pixel intensities to [0, 255] if they fall
-    # outside this range
-    l = _scale_array(l)
-    a = _scale_array(a)
-    b = _scale_array(b)
-
-    # merge the channels together and convert back to the RGB color
-    # space, being sure to utilize the 8-bit unsigned integer data
-    # type
-    transfer = cv2.merge([l, a, b])
-    transfer = cv2.cvtColor(transfer.astype("uint8"), cv2.COLOR_LAB2BGR)
-    show_image("Transfer", transfer)
-
-    cv2.waitKey(0)
-    # return the color transferred image
-    return transfer
-
-
 def image_stats(image):
     # compute the mean and standard deviation of each channel
     (l, a, b) = cv2.split(image)
@@ -102,7 +52,7 @@ def show_image(title, image, width=300):
     cv2.imshow(title, resized)
 
 
-def click_and_crop(event, x, y, image, flags, param):
+def click_and_crop(event, x, y, flags, param):
     # grab references to the global variables
     global refPt, cropping
     # if the left mouse button was clicked, record the starting
@@ -121,5 +71,72 @@ def click_and_crop(event, x, y, image, flags, param):
         cv2.rectangle(image, refPt[0], refPt[1], (0, 255, 0), 2)
         cv2.imshow("image", image)
 
-if __name__ == '__main__':
-    main()
+
+pathSource = "ocean_sunset.jpg"
+pathTarget = "ocean_day.jpg"
+image = cv2.imread("ocean_sunset.jpg")
+clone = image.copy()
+cv2.namedWindow("image")
+cv2.setMouseCallback("image", click_and_crop)
+while True:
+    # display the image and wait for a keypress
+    cv2.imshow("image", image)
+    key = cv2.waitKey(1) & 0xFF
+    # if the 'r' key is pressed, reset the cropping region
+    if key == ord("r"):
+        image = clone.copy()
+    # if the 'c' key is pressed, break from the loop
+    elif key == ord("c"):
+        break
+roi = clone[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
+cv2.imshow("r", roi)
+cv2.waitKey(0)
+    #
+    # # if there are two reference points, then crop the region of interest
+    # # from the image and display it
+    #
+    # # convert the images from the RGB to L*ab* color space, being
+    # # sure to utilizing the floating point data type (note: OpenCV
+    # # expects floats to be 32-bit, so use that instead of 64-bit)
+    # source = cv2.cvtColor(source, cv2.COLOR_BGR2LAB).astype("float32")
+    # target = cv2.cvtColor(target, cv2.COLOR_BGR2LAB).astype("float32")
+    #
+    # # compute color statistics for the source and target images
+    # (lMeanSrc, lStdSrc, aMeanSrc, aStdSrc, bMeanSrc, bStdSrc) = image_stats(source)
+    # (lMeanTar, lStdTar, aMeanTar, aStdTar, bMeanTar, bStdTar) = image_stats(target)
+    #
+    # # subtract the means from the target image
+    # (l, a, b) = cv2.split(target)
+    # l -= lMeanTar
+    # a -= aMeanTar
+    # b -= bMeanTar
+    #
+    # l = (lStdTar / lStdSrc) * l
+    # a = (aStdTar / aStdSrc) * a
+    # b = (bStdTar / bStdSrc) * b
+    #
+    # # add in the source mean
+    # l += lMeanSrc
+    # a += aMeanSrc
+    # b += bMeanSrc
+    #
+    # # clip/scale the pixel intensities to [0, 255] if they fall
+    # # outside this range
+    # l = _scale_array(l)
+    # a = _scale_array(a)
+    # b = _scale_array(b)
+    #
+    # # merge the channels together and convert back to the RGB color
+    # # space, being sure to utilize the 8-bit unsigned integer data
+    # # type
+    # transfer = cv2.merge([l, a, b])
+    # transfer = cv2.cvtColor(transfer.astype("uint8"), cv2.COLOR_LAB2BGR)
+    # show_image("Transfer", transfer)
+    #
+    # cv2.waitKey(0)
+    # # return the color transferred image
+    # return transfer
+
+
+# if __name__ == '__main__':
+#     main()
