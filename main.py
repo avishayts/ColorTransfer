@@ -16,25 +16,26 @@ def main():
     transfer = color_transfer(roi, target)
     (h, w, _) = roi.shape
     transfer = cv2.resize(transfer, (w, h), interpolation=cv2.INTER_AREA)
-    show_image("source", source)
-    show_image("target", target)
-    cv2.imshow("roi", roi)
+    source[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]] = transfer
+    show_image("Source", source)
+    show_image("Target", target)
+    cv2.imshow("Roi", roi)
     cv2.imshow("Transfer", transfer)
     cv2.waitKey(0)
 
 
 def resize(image):
-    r = 1000 / float(image.shape[1])
-    dim = (1000, int(image.shape[0] * r))
-    return cv2.resize(image, dim, interpolation=cv2.INTER_AREA)
+    r = 800 / float(image.shape[1])
+    dim = (800, int(image.shape[0] * r))
+    return cv2.resize(image, (600, 600), interpolation=cv2.INTER_AREA)
 
 
 def crop_picture(clone, source):
-    cv2.namedWindow("clone")
-    cv2.setMouseCallback("clone", click_and_crop, clone)
+    cv2.namedWindow("Image")
+    cv2.setMouseCallback("Image", click_and_crop, clone)
     while True:
         # display the image and wait for a keypress
-        cv2.imshow("clone", clone)
+        cv2.imshow("Image", clone)
         key = cv2.waitKey(1) & 0xFF
         # if the 'r' key is pressed, reset the cropping region
         if key == ord("r"):
