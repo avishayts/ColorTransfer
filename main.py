@@ -7,8 +7,8 @@ cropping = False
 
 
 def main():
-    pathSource = "photos/source.jpg"
-    pathTarget = "photos/t.jpg"
+    pathSource = "photos/1.png"
+    pathTarget = "photos/2.png"
     source = cv2.imread(pathSource)
     target = cv2.imread(pathTarget)
     source = resize(source)
@@ -159,29 +159,25 @@ def color_transfer(source, target):
     # return transfer
     s = target
     t = source
-    sources = ['s1', 's2', 's3', 's4', 's5', 's6']
-    targets = ['t1', 't2', 't3', 't4', 't5', 't6']
 
-    for n in range(len(sources)):
-        print("Converting picture" + str(n + 1) + "...")
-        s_mean, s_std = get_mean_and_std(s)
-        t_mean, t_std = get_mean_and_std(t)
+    print("Converting picture...")
+    s_mean, s_std = get_mean_and_std(s)
+    t_mean, t_std = get_mean_and_std(t)
 
-        height, width, channel = s.shape
-        for i in range(0, height):
-            for j in range(0, width):
-                for k in range(0, channel):
-                    x = s[i, j, k]
-                    x = ((x - s_mean[k]) * (t_std[k] / s_std[k])) + t_mean[k]
-                    # round or +0.5
-                    x = round(x)
-                    # boundary check
-                    x = 0 if x < 0 else x
-                    x = 255 if x > 255 else x
-                    s[i, j, k] = x
-
-        transfer = cv2.cvtColor(s.astype("uint8"), cv2.COLOR_LAB2BGR)
-        return transfer
+    height, width, channel = s.shape
+    for i in range(0, height):
+        for j in range(0, width):
+            for k in range(0, channel):
+                x = s[i, j, k]
+                x = ((x - s_mean[k]) * (t_std[k] / s_std[k])) + t_mean[k]
+                # round or + 0.5
+                x = round(x)
+                # boundary check
+                x = 0 if x < 0 else x
+                x = 255 if x > 255 else x
+                s[i, j, k] = x
+    transfer = cv2.cvtColor(s.astype("uint8"), cv2.COLOR_LAB2BGR)
+    return transfer
 
 
 def get_mean_and_std(x):
