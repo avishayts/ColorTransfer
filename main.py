@@ -1,13 +1,14 @@
 import cv2
 import numpy as np
+from skimage import io, color
 
 refPt = []
 cropping = False
 
 
 def main():
-    pathSource = "ocean_sunset.jpg"
-    pathTarget = "ocean_day.jpg"
+    pathSource = "photos/source.jpg"
+    pathTarget = "photos/t.jpg"
     source = cv2.imread(pathSource)
     target = cv2.imread(pathTarget)
     source = resize(source)
@@ -17,9 +18,9 @@ def main():
     (h, w, _) = roi.shape
     transfer = cv2.resize(transfer, (w, h), interpolation=cv2.INTER_AREA)
     source[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]] = transfer
-    show_image("Source", source)
+    cv2.imshow("Source", source)
     show_image("Target", target)
-    cv2.imshow("Roi", roi)
+    # cv2.imshow("Roi", roi)
     cv2.imshow("Transfer", transfer)
     cv2.waitKey(0)
 
@@ -115,47 +116,79 @@ def show_image(title, image, width=300):
 
 
 def color_transfer(source, target):
-    # if there are two reference points, then crop the region of interest
-    # from the image and display it
-
-    # convert the images from the RGB to L*ab* color space, being
-    # sure to utilizing the floating point data type (note: OpenCV
-    # expects floats to be 32-bit, so use that instead of 64-bit)
+    # # if there are two reference points, then crop the region of interest
+    # # from the image and display it
+    #
+    # # convert the images from the RGB to L*ab* color space, being
+    # # sure to utilizing the floating point data type (note: OpenCV
+    # # expects floats to be 32-bit, so use that instead of 64-bit)
     source = cv2.cvtColor(source, cv2.COLOR_BGR2LAB).astype("float32")
     target = cv2.cvtColor(target, cv2.COLOR_BGR2LAB).astype("float32")
+    #
+    # # compute color statistics for the source and target images
+    # (lMeanSrc, lStdSrc, aMeanSrc, aStdSrc, bMeanSrc, bStdSrc) = image_stats(source)
+    # (lMeanTar, lStdTar, aMeanTar, aStdTar, bMeanTar, bStdTar) = image_stats(target)
+    #
+    # # subtract the means from the target image
+    # (l, a, b) = cv2.split(target)
+    # l -= lMeanTar
+    # a -= aMeanTar
+    # b -= bMeanTar
+    #
+    # l = (lStdTar / lStdSrc) * l
+    # a = (aStdTar / aStdSrc) * a
+    # b = (bStdTar / bStdSrc) * b
+    #
+    # # add in the source mean
+    # l += lMeanSrc
+    # a += aMeanSrc
+    # b += bMeanSrc
+    #
+    # # clip/scale the pixel intensities to [0, 255] if they fall
+    # # outside this range
+    # l = _scale_array(l)
+    # a = _scale_array(a)
+    # b = _scale_array(b)
+    #
+    # # merge the channels together and convert back to the RGB color
+    # # space, being sure to utilize the 8-bit unsigned integer data
+    # # type
+    # transfer = cv2.merge([l, a, b])
+    # transfer = cv2.cvtColor(transfer.astype("uint8"), cv2.COLOR_LAB2BGR)
+    # # return the color transferred image
+    # return transfer
+    s = target
+    t = source
+    sources = ['s1', 's2', 's3', 's4', 's5', 's6']
+    targets = ['t1', 't2', 't3', 't4', 't5', 't6']
 
-    # compute color statistics for the source and target images
-    (lMeanSrc, lStdSrc, aMeanSrc, aStdSrc, bMeanSrc, bStdSrc) = image_stats(source)
-    (lMeanTar, lStdTar, aMeanTar, aStdTar, bMeanTar, bStdTar) = image_stats(target)
+    for n in range(len(sources)):
+        print("Converting picture" + str(n + 1) + "...")
+        s_mean, s_std = get_mean_and_std(s)
+        t_mean, t_std = get_mean_and_std(t)
 
-    # subtract the means from the target image
-    (l, a, b) = cv2.split(target)
-    l -= lMeanTar
-    a -= aMeanTar
-    b -= bMeanTar
+        height, width, channel = s.shape
+        for i in range(0, height):
+            for j in range(0, width):
+                for k in range(0, channel):
+                    x = s[i, j, k]
+                    x = ((x - s_mean[k]) * (t_std[k] / s_std[k])) + t_mean[k]
+                    # round or +0.5
+                    x = round(x)
+                    # boundary check
+                    x = 0 if x < 0 else x
+                    x = 255 if x > 255 else x
+                    s[i, j, k] = x
 
-    l = (lStdTar / lStdSrc) * l
-    a = (aStdTar / aStdSrc) * a
-    b = (bStdTar / bStdSrc) * b
+        transfer = cv2.cvtColor(s.astype("uint8"), cv2.COLOR_LAB2BGR)
+        return transfer
 
-    # add in the source mean
-    l += lMeanSrc
-    a += aMeanSrc
-    b += bMeanSrc
 
-    # clip/scale the pixel intensities to [0, 255] if they fall
-    # outside this range
-    l = _scale_array(l)
-    a = _scale_array(a)
-    b = _scale_array(b)
-
-    # merge the channels together and convert back to the RGB color
-    # space, being sure to utilize the 8-bit unsigned integer data
-    # type
-    transfer = cv2.merge([l, a, b])
-    transfer = cv2.cvtColor(transfer.astype("uint8"), cv2.COLOR_LAB2BGR)
-    # return the color transferred image
-    return transfer
+def get_mean_and_std(x):
+    x_mean, x_std = cv2.meanStdDev(x)
+    x_mean = np.hstack(np.around(x_mean, 2))
+    x_std = np.hstack(np.around(x_std, 2))
+    return x_mean, x_std
 
 
 if __name__ == '__main__':
