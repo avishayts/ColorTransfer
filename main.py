@@ -6,7 +6,8 @@ import string
 from PIL import Image
 
 refPt = []
-
+selected = False
+clicked = False
 
 def main():
     # pathImage = input("Enter path for image: ")
@@ -52,6 +53,7 @@ def resize(image, width):
 
 
 def crop_picture(clone, source):
+    global selected, clicked
     cv2.namedWindow("Image")
     cv2.setMouseCallback("Image", click_and_crop, clone)
     while True:
@@ -60,48 +62,56 @@ def crop_picture(clone, source):
         key = cv2.waitKey(1) & 0xFF
         # if the 'r' key is pressed, reset the cropping region
         if key == ord("r"):
+            clicked = False
+            selected = False
             clone = source.copy()
             cv2.setMouseCallback("Image", click_and_crop, clone)
         # if the 'c' key is pressed, break from the loop
         elif key == ord("c"):
-            break
+            if selected:
+                break
+            else:
+                print("Need to select area")
     roi = source[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
     return roi
 
 
 def click_and_crop(event, x, y, flags, param):
     # grab references to the global variables
-    global refPt
+    global refPt, selected, clicked
     # if the left mouse button was clicked, record the starting
     # (x, y) coordinates and indicate that cropping is being
     # performed
-    if event == cv2.EVENT_LBUTTONDOWN:
-        refPt = [(x, y)]
-        # cropping = True
-    # check to see if the left mouse button was released
-    elif event == cv2.EVENT_LBUTTONUP:
-        # record the ending (x, y) coordinates and indicate that
-        # the cropping operation is finished
-        refPt.append((x, y))
-        # adjust refPt coordinates if needed
-        if refPt[0][0] > refPt[1][0]:
-            if refPt[0][1] > refPt[1][1]:  # from right to left and down to up
-                temp = refPt[0]
-                refPt[0] = refPt[1]
-                refPt[1] = temp
-            else:  # from right to left and up to down
-                x_0 = refPt[0][0]
-                x_1 = refPt[1][0]
-                refPt[0] = [x_1, refPt[0][1]]
-                refPt[1] = [x_0, refPt[1][1]]
-        else:
-            if refPt[0][1] > refPt[1][1]:  # from left to right and down to up
-                y_0 = refPt[0][1]
-                y_1 = refPt[1][1]
-                refPt[0] = [refPt[0][0], y_1]
-                refPt[1] = [refPt[1][0], y_0]
-        # draw a rectangle around the region of interest
-        cv2.rectangle(param, refPt[0], refPt[1], (0, 255, 0), 2)
+    if not clicked:
+        if event == cv2.EVENT_LBUTTONDOWN:
+            refPt = [(x, y)]
+            # cropping = True
+        # check to see if the left mouse button was released
+        elif event == cv2.EVENT_LBUTTONUP:
+            # record the ending (x, y) coordinates and indicate that
+            # the cropping operation is finished
+            refPt.append((x, y))
+            # adjust refPt coordinates if needed
+            if refPt[0][0] > refPt[1][0]:
+                if refPt[0][1] > refPt[1][1]:  # from right to left and down to up
+                    temp = refPt[0]
+                    refPt[0] = refPt[1]
+                    refPt[1] = temp
+                else:  # from right to left and up to down
+                    x_0 = refPt[0][0]
+                    x_1 = refPt[1][0]
+                    refPt[0] = [x_1, refPt[0][1]]
+                    refPt[1] = [x_0, refPt[1][1]]
+            else:
+                if refPt[0][1] > refPt[1][1]:  # from left to right and down to up
+                    y_0 = refPt[0][1]
+                    y_1 = refPt[1][1]
+                    refPt[0] = [refPt[0][0], y_1]
+                    refPt[1] = [refPt[1][0], y_0]
+            # draw a rectangle around the region of interest
+            selected = True
+            cv2.rectangle(param, refPt[0], refPt[1], (0, 255, 0), 2)
+            clicked = True
 
 
 def image_stats(image):
