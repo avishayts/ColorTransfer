@@ -6,7 +6,6 @@ import string
 from PIL import Image
 
 refPt = []
-# cropping = False
 
 
 def main():
