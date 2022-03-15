@@ -22,9 +22,8 @@ def main():
     cv2.setWindowProperty("Source", cv2.WND_PROP_TOPMOST, 1)
 
     # crop target from image and transfer color from target to source
-    clone = image.copy()
     print("Menu:\n\tr = reset selected area\n\tc = crop selected area")
-    target = crop_picture(clone, image)
+    target = crop_picture(image)
     transfer = color_transfer(source, target)
 
     # resize color transferred source to fit the cropped target
@@ -40,8 +39,9 @@ def resize(image, width):
     return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
 
 
-def crop_picture(clone, image):
+def crop_picture(image):
     global selected, clicked
+    clone = image.copy()
     cv2.namedWindow("Image")
     cv2.setMouseCallback("Image", click_and_crop, clone)
     while True:
@@ -50,14 +50,14 @@ def crop_picture(clone, image):
         cv2.setWindowProperty("Image", cv2.WND_PROP_TOPMOST, 1)
         key = cv2.waitKey(1) & 0xFF
         # if the 'r' key is pressed, reset the selected area
-        if key == ord("r"):
+        if key == ord("r") or key == ord("R"):
             # indicates that need to select area
             clicked = False
             selected = False
             clone = image.copy()
             cv2.setMouseCallback("Image", click_and_crop, clone)
         # if the 'c' key is pressed, break from the loop and crop selected area
-        elif key == ord("c"):
+        elif key == ord("c") or key == ord("C"):
             if selected:
                 break
             else:
