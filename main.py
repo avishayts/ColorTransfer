@@ -1,32 +1,33 @@
-import sys
-
 import cv2
 import numpy as np
-import string
-from PIL import Image
 
 refPt = []
 selected = False
 clicked = False
 
+
 def main():
+    # get path of image and source as input
     # pathImage = input("Enter path for image: ")
-    # pathTarget = input("Enter path for target: ")
-    # cv2.waitKey()
-    # image = Image.open(pathImage)
-    # source = Image.open(pathTarget)
-    # source.show()
-    pathImage = "workers.jpg"
-    pathTarget = "forest.jpg"
+    # pathSource = input("Enter path for source: ")
+    pathImage = "source.jpg"
+    pathSource = "t.jpg"
+
+    # show and resize image and source
     image = cv2.imread(pathImage)
-    source = cv2.imread(pathTarget)
+    source = cv2.imread(pathSource)
     image = resize(image, 800)
     source = resize(source, 400)
     cv2.imshow("Source", source)
-    # cv2.waitKey()
+    cv2.setWindowProperty("Source", cv2.WND_PROP_TOPMOST, 1)
+
+    # crop target from image and transfer color from target to source
     clone = image.copy()
+    print("Menu:\n\tr = reset selected area\n\tc = crop selected area")
     target = crop_picture(clone, image)
     transfer = color_transfer(source, target)
+
+    # resize color transferred source to fit the cropped target
     (h, w, _) = target.shape
     transfer = cv2.resize(transfer, (w, h), interpolation=cv2.INTER_AREA)
     image[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]] = transfer
@@ -34,62 +35,46 @@ def main():
     cv2.waitKey(0)
 
 
-def keyboard_input():
-    text = ""
-    letters = string.ascii_lowercase + string.digits
-    while True:
-        key = cv2.waitKey(1)
-        for letter in letters:
-            if key == ord(letter):
-                text = text + letter
-        if key == ord("\n") or key == ord("\r"):  # Enter Key
-            break
-    return text
-
-
 def resize(image, width):
     height = int(image.shape[0] * (width / float(image.shape[1])))
     return cv2.resize(image, (width, height), interpolation=cv2.INTER_AREA)
 
 
-def crop_picture(clone, source):
+def crop_picture(clone, image):
     global selected, clicked
     cv2.namedWindow("Image")
     cv2.setMouseCallback("Image", click_and_crop, clone)
     while True:
         # display the image and wait for a keypress
         cv2.imshow("Image", clone)
+        cv2.setWindowProperty("Image", cv2.WND_PROP_TOPMOST, 1)
         key = cv2.waitKey(1) & 0xFF
-        # if the 'r' key is pressed, reset the cropping region
+        # if the 'r' key is pressed, reset the selected area
         if key == ord("r"):
+            # indicates that need to select area
             clicked = False
             selected = False
-            clone = source.copy()
+            clone = image.copy()
             cv2.setMouseCallback("Image", click_and_crop, clone)
-        # if the 'c' key is pressed, break from the loop
+        # if the 'c' key is pressed, break from the loop and crop selected area
         elif key == ord("c"):
             if selected:
                 break
             else:
-                print("Need to select area")
-    roi = source[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
+                print("No area selected")
+    # return cropped target
+    roi = image[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]]
     return roi
 
 
 def click_and_crop(event, x, y, flags, param):
-    # grab references to the global variables
     global refPt, selected, clicked
-    # if the left mouse button was clicked, record the starting
-    # (x, y) coordinates and indicate that cropping is being
-    # performed
     if not clicked:
+        # get initial (x, y) coordinates by clicking mouse button
         if event == cv2.EVENT_LBUTTONDOWN:
             refPt = [(x, y)]
-            # cropping = True
-        # check to see if the left mouse button was released
+        # get final (x, y) coordinates by releasing mouse button
         elif event == cv2.EVENT_LBUTTONUP:
-            # record the ending (x, y) coordinates and indicate that
-            # the cropping operation is finished
             refPt.append((x, y))
             # adjust refPt coordinates if needed
             if refPt[0][0] > refPt[1][0]:
@@ -108,10 +93,12 @@ def click_and_crop(event, x, y, flags, param):
                     y_1 = refPt[1][1]
                     refPt[0] = [refPt[0][0], y_1]
                     refPt[1] = [refPt[1][0], y_0]
-            # draw a rectangle around the region of interest
-            selected = True
+            # draw a rectangle around the selected area
             cv2.rectangle(param, refPt[0], refPt[1], (0, 255, 0), 2)
+            # indicates that area is selected, and can't select another area until reset
             clicked = True
+            # indicates that crop can be done after selecting area
+            selected = True
 
 
 def image_stats(image):
