@@ -7,30 +7,42 @@ clicked = False
 
 
 def main():
-    # get path of image and source as input
-    # pathImage = input("Enter path for image: ")
-    # pathSource = input("Enter path for source: ")
-    pathImage = "source.jpg"
-    pathSource = "t.jpg"
+
+    # get path of image as input
+    while True:
+        pathImage = input("Enter path for image: ")
+        image = cv2.imread(pathImage)
+        if image is not None:
+            break
+        print("Image path not found or invalid.\n")
+
+    # get path of source as input
+    while True:
+        pathSource = input("Enter path for source: ")
+        source = cv2.imread(pathSource)
+        if source is not None:
+            break
+        print("Source path not found or invalid.\n")
 
     # show and resize image and source
-    image = cv2.imread(pathImage)
-    source = cv2.imread(pathSource)
     image = resize(image, 800)
     source = resize(source, 400)
     cv2.imshow("Source", source)
     cv2.setWindowProperty("Source", cv2.WND_PROP_TOPMOST, 1)
 
     # crop target from image and transfer color from target to source
-    print("Menu:\n\tr = reset selected area\n\tc = crop selected area")
+    print("\nMenu:\n\tr = reset selected area\n\tc = crop selected area\n")
     target = crop_picture(image)
+    print("Cropping...\n")
     transfer = color_transfer(source, target)
+    print("Color Transferring...\n")
 
     # resize color transferred source to fit the cropped target
     (h, w, _) = target.shape
     transfer = cv2.resize(transfer, (w, h), interpolation=cv2.INTER_AREA)
     image[refPt[0][1]:refPt[1][1], refPt[0][0]:refPt[1][0]] = transfer
     cv2.imshow("Image", image)
+    print("Press any key for exit.")
     cv2.waitKey(0)
 
 
